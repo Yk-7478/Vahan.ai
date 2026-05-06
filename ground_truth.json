@@ -1,0 +1,102 @@
+{
+  "01_Sarjapur_crowded.wav": {
+    "transcript": "haan main sarjapur mein rehta hoon",
+    "condition": "crowded",
+    "language": "hindi"
+  },
+  "02_Koramangala_clear.wav": {
+    "transcript": "koramangala mein mera ghar hai",
+    "condition": "clear",
+    "language": "hindi"
+  },
+  "03_Majestic_pocket.wav": {
+    "transcript": "main majestic bus stand ke paas hun",
+    "condition": "pocket",
+    "language": "hindi"
+  },
+  "04_Hebbal_construction.wav": {
+    "transcript": "hebbal mein kaam karta hoon main",
+    "condition": "construction",
+    "language": "hindi"
+  },
+  "05_Doddanekundi_music.wav": {
+    "transcript": "doddanekundi se bol raha hoon",
+    "condition": "music",
+    "language": "hindi"
+  },
+  "06_BTM Layout_hinglish.wav": {
+    "transcript": "btm layout mein mera apartment hai",
+    "condition": "hinglish",
+    "language": "hinglish"
+  },
+  "07_KR Puram_wishpered.wav": {
+    "transcript": "kr puram station ke paas hun main",
+    "condition": "whispered",
+    "language": "hindi"
+  },
+  "08_Bellandur_car.wav": {
+    "transcript": "bellandur mein rehta hoon",
+    "condition": "car",
+    "language": "hindi"
+  },
+  "09_Yeshwanthpur_Kannada.wav": {
+    "transcript": "yeshwanthpur mein hun main",
+    "condition": "kannada",
+    "language": "kannada"
+  },
+  "10_HSR Layout_distance.wav": {
+    "transcript": "hsr layout mein flat hai mera",
+    "condition": "distance",
+    "language": "hinglish"
+  },
+  "11_Yelahanka_mumbled.wav": {
+    "transcript": "yelahanka ke paas hun main",
+    "condition": "mumbled",
+    "language": "hindi"
+  },
+  "12_Banashankari_Shouted.wav": {
+    "transcript": "banashankari area mein rehta hoon",
+    "condition": "shouted",
+    "language": "hindi"
+  },
+  "13_Kothanur_Dinne_News.wav": {
+    "transcript": "kothanur dinne mein ghar hai",
+    "condition": "news",
+    "language": "hindi"
+  },
+  "14_Electronic_City_Fan.wav": {
+    "transcript": "electronic city mein kaam karta hoon main",
+    "condition": "fan",
+    "language": "hindi"
+  },
+  "15_Marathahalli_Rushed.wav": {
+    "transcript": "marathahalli mein rehta hoon",
+    "condition": "rushed",
+    "language": "hinglish"
+  },
+  "16_Indiranagar_Traffic.wav": {
+    "transcript": "indiranagar ke paas mera ghar hai",
+    "condition": "traffic",
+    "language": "hindi"
+  },
+  "17_Thanisandra_Barking.wav": {
+    "transcript": "thanisandra se hun main",
+    "condition": "barking",
+    "language": "hindi"
+  },
+  "18_Jayanagar_Slowed.wav": {
+    "transcript": "jayanagar mein rehta hoon bhaiya",
+    "condition": "slowed",
+    "language": "hindi"
+  },
+  "19_Rajajinagar_Market.wav": {
+    "transcript": "rajajinagar mein hun main",
+    "condition": "market",
+    "language": "hindi"
+  },
+  "20_Whitefield_Whatsapp.wav": {
+    "transcript": "whitefield se bol raha hoon",
+    "condition": "whatsapp",
+    "language": "hinglish"
+  }
+}

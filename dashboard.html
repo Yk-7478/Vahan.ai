@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASR Benchmark — India Voice Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3d;
+    --accent: #ff6b35;
+    --accent2: #00d4aa;
+    --accent3: #7c6af7;
+    --accent4: #f7c948;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --deepgram: #ff6b35;
+    --whisper: #7c6af7;
+    --indic: #00d4aa;
+    --google: #f7c948;
+    --fail: #ff4466;
+    --pass: #00d4aa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  .header-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .header-meta {
+    margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 48px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(255,107,53,0.05);
+  }
+  .upload-zone h3 { font-size: 18px; margin-bottom: 8px; }
+  .upload-zone p { color: var(--muted); font-size: 14px; font-family: 'JetBrains Mono', monospace; }
+  .upload-zone input { display: none; }
+
+  /* Demo data button */
+  .demo-btn {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .demo-btn:hover { opacity: 0.85; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.deepgram::after { background: var(--deepgram); }
+  .stat-card.whisper::after  { background: var(--whisper); }
+  .stat-card.indic::after    { background: var(--indic); }
+  .stat-card.google::after   { background: var(--google); }
+  .stat-card.total::after    { background: linear-gradient(90deg, var(--accent), var(--accent3)); }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+
+  .stat-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Section */
+  section { margin-bottom: 48px; }
+
+  .section-title {
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Chart container */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .chart-grid { grid-template-columns: 1fr; }
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+
+  .chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  /* Bar chart */
+  .bar-group { margin-bottom: 14px; }
+  .bar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .bar-track {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Entity accuracy chart */
+  .entity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .entity-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .entity-name {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .entity-dots {
+    display: flex;
+    gap: 4px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+  .dot.pass { background: var(--pass); }
+  .dot.fail { background: var(--fail); }
+  .dot.na   { background: var(--border); }
+
+  /* Results table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .table-controls {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(255,107,53,0.08);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(42,42,61,0.5);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .model-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .model-tag.deepgram { background: rgba(255,107,53,0.15); color: var(--deepgram); }
+  .model-tag.whisper  { background: rgba(124,106,247,0.15); color: var(--whisper); }
+  .model-tag.indic    { background: rgba(0,212,170,0.15); color: var(--indic); }
+  .model-tag.google   { background: rgba(247,201,72,0.15); color: var(--google); }
+
+  .cond-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .wer-cell { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .wer-good { color: var(--pass); }
+  .wer-mid  { color: var(--accent4); }
+  .wer-bad  { color: var(--fail); }
+
+  .entity-badge {
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .transcript-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .transcript-cell .hit { color: var(--pass); font-weight: 600; }
+  .transcript-cell .miss { color: var(--fail); text-decoration: underline wavy; }
+
+  /* Failure analysis */
+  .failure-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .failure-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .failure-card h4 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .failure-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .failure-item:last-child { border-bottom: none; }
+
+  .failure-name { font-family: 'JetBrains Mono', monospace; }
+  .failure-rate {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--fail);
+    font-weight: 600;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+  .empty p { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  /* Latency chart - dot plot */
+  .dot-plot {
+    position: relative;
+    height: 120px;
+    margin-top: 10px;
+  }
+  .dot-plot-inner { position: relative; height: 100%; }
+  .dp-axis {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+  .dp-dot {
+    position: absolute;
+    bottom: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    transition: transform 0.2s;
+    cursor: pointer;
+  }
+  .dp-dot:hover { transform: translateX(-50%) scale(1.5); }
+  .dp-label {
+    position: absolute;
+    bottom: 18px;
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .dp-tick {
+    position: absolute;
+    bottom: -14px;
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate { animation: fadeInUp 0.4s ease both; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="animate">
+    <div class="header-tag">// ASR Evaluation System</div>
+    <h1>Voice Recognition<br><span>Shootout</span></h1>
+    <div class="header-meta">
+      <span>India Blue-Collar Hiring Platform</span>
+      <span>Bangalore Locality Names</span>
+      <span id="file-count">0 samples loaded</span>
+      <span id="last-updated">—</span>
+    </div>
+  </header>
+
+  <!-- Upload -->
+  <div class="upload-zone animate" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <input type="file" id="file-input" accept=".json,.csv" onchange="loadFile(event)">
+    <h3>Drop benchmark_results.json or .csv here</h3>
+    <p>from results/ directory after running benchmark.py</p>
+    <button class="demo-btn" onclick="loadDemoData(event)">↗ Load Demo Data</button>
+  </div>
+
+  <!-- Stats row -->
+  <div id="stats-section" style="display:none">
+    <div class="stats-row" id="stats-row"></div>
+
+    <!-- WER & Entity charts -->
+    <div class="section-title">Model Performance</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">Word Error Rate — bars scaled to worst model <span style="color:var(--muted);font-size:11px;font-weight:400">(can exceed 100% due to insertions)</span></div>
+        <div id="wer-chart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Entity Accuracy — Locality Name Captured</div>
+        <div id="entity-chart"></div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">WER by Noise Condition — bars scaled to worst condition</div>
+        <div id="condition-chart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Average Latency (ms)</div>
+        <div id="latency-chart"></div>
+      </div>
+    </div>
+
+    <!-- Entity heatmap -->
+    <div class="section-title">Entity Coverage by Locality</div>
+    <div class="chart-card" style="margin-bottom:48px">
+      <div class="legend" id="entity-legend"></div>
+      <div class="entity-grid" id="entity-heatmap"></div>
+    </div>
+
+    <!-- Failure analysis -->
+    <div class="section-title">Failure Analysis</div>
+    <div class="failure-grid" id="failure-grid"></div>
+
+    <!-- Results table -->
+    <div class="section-title" style="margin-top:48px">Full Results</div>
+    <div class="table-wrap">
+      <div class="table-controls" id="table-controls"></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Model</th>
+              <th>Condition</th>
+              <th>WER</th>
+              <th>CER</th>
+              <th>Entity</th>
+              <th>Latency</th>
+              <th>Hypothesis</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="empty-state" style="display:none" class="empty">
+    <h3>No data loaded</h3>
+    <p>Upload results JSON/CSV or load demo data above</p>
+  </div>
+
+</div>
+
+<script>
+const MODEL_COLORS = {
+  deepgram:      '#ff6b35',
+  whisper:       '#7c6af7',
+  indic_whisper: '#00d4aa',
+  google_stt:    '#f7c948',
+  sarvam:        '#00d4aa',
+  assemblyai:    '#f7c948'
+};
+
+const MODEL_LABELS = {
+  deepgram:      'Deepgram',
+  whisper:       'Whisper',
+  indic_whisper: 'IndicWhisper',
+  google_stt:    'Google STT',
+  sarvam:        'Sarvam AI',
+  assemblyai:    'AssemblyAI'
+};
+
+let allData = [];
+let activeFilter = 'all';
+
+// ── Demo data generator ──────────────────────────────────────────────────────
+function generateDemoData() {
+  const files = [
+    {f:'01_koramangala_quiet.wav', loc:'Koramangala', cond:'quiet', lang:'hindi'},
+    {f:'02_indiranagar_noisy.wav', loc:'Indiranagar', cond:'noisy', lang:'hindi'},
+    {f:'03_whitefield_phone.wav', loc:'Whitefield', cond:'phone', lang:'hinglish'},
+    {f:'04_electronic_city_quiet.wav', loc:'Electronic City', cond:'quiet', lang:'hindi'},
+    {f:'05_marathahalli_noisy.wav', loc:'Marathahalli', cond:'noisy', lang:'hinglish'},
+    {f:'06_jayanagar_phone.wav', loc:'Jayanagar', cond:'phone', lang:'hindi'},
+    {f:'07_rajajinagar_whisper.wav', loc:'Rajajinagar', cond:'whisper', lang:'hindi'},
+    {f:'08_hebbal_quiet.wav', loc:'Hebbal', cond:'quiet', lang:'hindi'},
+    {f:'09_yelahanka_noisy.wav', loc:'Yelahanka', cond:'noisy', lang:'hindi'},
+    {f:'10_banashankari_phone.wav', loc:'Banashankari', cond:'phone', lang:'hinglish'},
+    {f:'11_hsr_layout_quiet.wav', loc:'HSR Layout', cond:'quiet', lang:'hinglish'},
+    {f:'12_btm_layout_noisy.wav', loc:'BTM Layout', cond:'noisy', lang:'hinglish'},
+    {f:'13_majestic_phone.wav', loc:'Majestic', cond:'phone', lang:'hindi'},
+    {f:'14_silk_board_quiet.wav', loc:'Silk Board', cond:'quiet', lang:'hinglish'},
+    {f:'15_bellandur_noisy.wav', loc:'Bellandur', cond:'noisy', lang:'hindi'},
+    {f:'16_sarjapur_phone.wav', loc:'Sarjapur', cond:'phone', lang:'hinglish'},
+    {f:'17_bommanahalli_quiet.wav', loc:'Bommanahalli', cond:'quiet', lang:'hindi'},
+    {f:'18_kr_puram_whisper.wav', loc:'KR Puram', cond:'whisper', lang:'hinglish'},
+    {f:'19_peenya_noisy.wav', loc:'Peenya', cond:'noisy', lang:'hindi'},
+    {f:'20_yeshwanthpur_phone.wav', loc:'Yeshwanthpur', cond:'phone', lang:'hindi'},
+  ];
+
+  // Model performance profiles (realistic for Indian speech)
+  const profiles = {
+    deepgram:      {wer_base:0.12, entity_rate:0.82, latency_base:320},
+    whisper:       {wer_base:0.21, entity_rate:0.65, latency_base:1800},
+    sarvam:        {wer_base:0.14, entity_rate:0.80, latency_base:950},
+    assemblyai:    {wer_base:0.17, entity_rate:0.72, latency_base:520},
+  };
+
+  const condNoise = {quiet:0, noisy:0.18, phone:0.09, whisper:0.14};
+
+  const data = [];
+  for (const {f, loc, cond, lang} of files) {
+    for (const [model, prof] of Object.entries(profiles)) {
+      const noise = condNoise[cond];
+      const wer = Math.min(0.99, prof.wer_base + noise + (Math.random()-0.5)*0.08);
+      const cer = wer * 0.7;
+      const hardLocality = ['Byatarayanapura','Kadugondanahalli','Thalaghattapura','Rajarajeshwarinagar'].includes(loc);
+      const entity_p = hardLocality ? prof.entity_rate * 0.5 : (cond==='noisy' ? prof.entity_rate*0.75 : prof.entity_rate);
+      const entity_captured = Math.random() < entity_p;
+      const latency = prof.latency_base + (Math.random()-0.5) * prof.latency_base * 0.3;
+
+      data.push({
+        file: f,
+        model,
+        condition: cond,
+        language: lang,
+        locality: loc,
+        wer: +wer.toFixed(4),
+        cer: +cer.toFixed(4),
+        entity_captured,
+        latency_ms: Math.round(latency),
+        hypothesis: entity_captured
+          ? `haan main ${loc.toLowerCase()} mein rehta hoon`
+          : `haan main [??] mein rehta hoon`,
+        error: null
+      });
+    }
+  }
+  return data;
+}
+
+// ── File loading ─────────────────────────────────────────────────────────────
+function loadFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = file.name.endsWith('.csv') ? parseCSV(e.target.result) : JSON.parse(e.target.result);
+      allData = data;
+      render(data);
+    } catch(err) { alert('Could not parse file: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split(',');
+    const obj = {};
+    headers.forEach((h, i) => {
+      const v = (vals[i] || '').trim();
+      obj[h] = (h==='wer'||h==='cer'||h==='latency_ms') ? parseFloat(v) :
+                h==='entity_captured' ? (v==='True'||v==='true'||v==='1') : v;
+    });
+    return obj;
+  });
+}
+
+function loadDemoData(e) {
+  e.stopPropagation();
+  allData = generateDemoData();
+  render(allData);
+}
+
+// ── Drag & drop ──────────────────────────────────────────────────────────────
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) { const ev = {target:{files:[file]}}; loadFile(ev); }
+});
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function render(data) {
+  document.getElementById('drop-zone').style.display = 'none';
+  document.getElementById('stats-section').style.display = 'block';
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('file-count').textContent = `${new Set(data.map(d=>d.file)).size} samples`;
+  document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+
+  renderStats(data);
+  renderWERChart(data);
+  renderEntityChart(data);
+  renderConditionChart(data);
+  renderLatencyChart(data);
+  renderEntityHeatmap(data);
+  renderFailureAnalysis(data);
+  renderTable(data, 'all');
+  renderTableControls(data);
+}
+
+// ── Stats cards ───────────────────────────────────────────────────────────────
+function renderStats(data) {
+  const models = [...new Set(data.map(d=>d.model))];
+  const byModel = {};
+  for (const m of models) {
+    const rows = data.filter(d=>d.model===m && !d.error && d.wer!=null);
+    byModel[m] = {
+      wer: avg(rows.map(r=>r.wer)),
+      entity: avg(rows.map(r=>r.entity_captured?1:0)),
+      latency: avg(rows.map(r=>r.latency_ms)),
+      count: rows.length
+    };
+  }
+
+  const classMap = {deepgram:'deepgram',whisper:'whisper',indic_whisper:'indic',google_stt:'google',sarvam:'indic',assemblyai:'google'};
+  let html = `<div class="stat-card total">
+    <div class="stat-label">Total Evaluations</div>
+    <div class="stat-value">${data.length}</div>
+    <div class="stat-sub">${models.length} models × ${new Set(data.map(d=>d.file)).size} files</div>
+  </div>`;
+
+  for (const m of models) {
+    const s = byModel[m];
+    const cls = classMap[m] || 'total';
+    html += `<div class="stat-card ${cls}">
+      <div class="stat-label">${MODEL_LABELS[m]||m}</div>
+      <div class="stat-value" style="color:${MODEL_COLORS[m]||'var(--text)'}">${(s.wer*100).toFixed(1)}%</div>
+      <div class="stat-sub">WER · ${(s.entity*100).toFixed(0)}% entity acc</div>
+    </div>`;
+  }
+  document.getElementById('stats-row').innerHTML = html;
+}
+
+// ── WER chart ─────────────────────────────────────────────────────────────────
+function renderWERChart(data) {
+  const models = [...new Set(data.map(d=>d.model))];
+  // Compute per-model avg WER first, then scale bars relative to the worst model
+  const werByModel = {};
+  for (const m of models) {
+    const rows = data.filter(d=>d.model===m && d.wer!=null && !isNaN(d.wer) && !d.error);
+    if (rows.length) werByModel[m] = avg(rows.map(r=>r.wer));
+  }
+  const maxWER = Math.max(...Object.values(werByModel), 0.01);
+  let html = '';
+  for (const m of models) {
+    if (!(m in werByModel)) continue;
+    const wer = werByModel[m];
+    const pct = (wer*100).toFixed(1);
+    const width = (wer / maxWER) * 100; // relative to worst model = 100% bar
+    const color = MODEL_COLORS[m] || 'var(--accent)';
+    html += `<div class="bar-group">
+      <div class="bar-label">
+        <span>${MODEL_LABELS[m]||m}</span>
+        <span style="color:${color}">${pct}%</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:0%;background:${color}" data-target="${width}"></div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('wer-chart').innerHTML = html || '<p style="color:var(--muted);font-size:12px;padding:20px 0">No WER data available</p>';
+  animateBars('wer-chart');
+}
+
+// ── Entity chart ──────────────────────────────────────────────────────────────
+function renderEntityChart(data) {
+  const models = [...new Set(data.map(d=>d.model))];
+  let html = '';
+  for (const m of models) {
+    const rows = data.filter(d=>d.model===m && !d.error);
+    if (!rows.length) continue;
+    const acc = avg(rows.map(r=>r.entity_captured?1:0));
+    const pct = (acc*100).toFixed(1);
+    const color = MODEL_COLORS[m] || 'var(--accent)';
+    html += `<div class="bar-group">
+      <div class="bar-label">
+        <span>${MODEL_LABELS[m]||m}</span>
+        <span style="color:${color}">${pct}%</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:0%;background:${color}" data-target="${acc*100}"></div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('entity-chart').innerHTML = html;
+  animateBars('entity-chart');
+}
+
+// ── Condition chart ───────────────────────────────────────────────────────────
+function renderConditionChart(data) {
+  // Dynamically read conditions from data — don't hardcode them
+  const conditions = [...new Set(data.map(d=>d.condition).filter(Boolean))].sort();
+  const condEmoji = {quiet:'🔇',noisy:'🔊',phone:'📱',whisper:'🤫',whispered:'🤫',
+    crowded:'👥',clear:'✅',construction:'🏗',music:'🎵',car:'🚗',
+    traffic:'🚦',barking:'🐕',mumbled:'😶',shouted:'📣',rushed:'⚡',
+    slowed:'🐢',distance:'📡',fan:'💨',market:'🛒',pocket:'👜',
+    hinglish:'🔤',kannada:'🇮🇳',news:'📰',whatsapp:'💬'};
+  let html = '';
+  // Compute per-condition WER, scale relative to worst condition
+  const werByCond = {};
+  for (const cond of conditions) {
+    const condRows = data.filter(d=>d.condition===cond && !d.error && d.wer!=null && !isNaN(d.wer));
+    if (condRows.length) werByCond[cond] = avg(condRows.map(r=>r.wer));
+  }
+  const maxWER = Math.max(...Object.values(werByCond), 0.01);
+  for (const cond of conditions) {
+    if (!(cond in werByCond)) continue;
+    const overallWER = werByCond[cond];
+    const emoji = condEmoji[cond] || '🎙';
+    const width = (overallWER / maxWER) * 100;
+    html += `<div class="bar-group">
+      <div class="bar-label">
+        <span>${emoji} ${cond}</span>
+        <span>${(overallWER*100).toFixed(1)}% avg WER</span>
+      </div>
+      <div class="bar-track" style="height:6px">
+        <div class="bar-fill" style="width:0%;background:var(--accent3)" data-target="${width}"></div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('condition-chart').innerHTML = html || '<p style="color:var(--muted);font-size:12px;padding:20px 0">No condition data available</p>';
+  animateBars('condition-chart');
+}
+
+// ── Latency chart ─────────────────────────────────────────────────────────────
+function renderLatencyChart(data) {
+  const models = [...new Set(data.map(d=>d.model))];
+  let html = '';
+  const latencies = models.map(m => avg(data.filter(d=>d.model===m&&d.latency_ms&&!isNaN(d.latency_ms)).map(r=>r.latency_ms))).filter(v=>v>0);
+  const max = latencies.length ? Math.max(...latencies) : 1;
+  for (const m of models) {
+    const rows = data.filter(d=>d.model===m && d.latency_ms && !isNaN(d.latency_ms) && !d.error);
+    if (!rows.length) continue;
+    const lat = avg(rows.map(r=>r.latency_ms));
+    const color = MODEL_COLORS[m] || 'var(--accent)';
+    html += `<div class="bar-group">
+      <div class="bar-label">
+        <span>${MODEL_LABELS[m]||m}</span>
+        <span style="color:${color}">${Math.round(lat)}ms</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:0%;background:${color}" data-target="${(lat/max)*100}"></div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('latency-chart').innerHTML = html;
+  animateBars('latency-chart');
+}
+
+// ── Entity heatmap ────────────────────────────────────────────────────────────
+function renderEntityHeatmap(data) {
+  const models = [...new Set(data.map(d=>d.model))];
+  const localities = [...new Set(data.map(d=>d.locality).filter(Boolean))];
+  const classMap = {deepgram:'deepgram',whisper:'whisper',indic_whisper:'indic',google_stt:'google'};
+
+  // Legend
+  let leg = models.map(m => `<div class="legend-item">
+    <div class="legend-dot" style="background:${MODEL_COLORS[m]}"></div>
+    ${MODEL_LABELS[m]||m}
+  </div>`).join('');
+  leg += `<div class="legend-item"><div class="legend-dot" style="background:var(--fail)"></div>Miss</div>`;
+  document.getElementById('entity-legend').innerHTML = leg;
+
+  let html = '';
+  for (const loc of localities) {
+    const dots = models.map(m => {
+      const r = data.find(d=>d.model===m && d.locality===loc);
+      if (!r) return `<div class="dot na" title="${MODEL_LABELS[m]||m}: N/A"></div>`;
+      const color = MODEL_COLORS[m] || 'var(--accent)';
+      return `<div class="dot ${r.entity_captured?'pass':'fail'}"
+        style="background:${r.entity_captured ? color : 'var(--fail)'}"
+        title="${MODEL_LABELS[m]||m}: ${r.entity_captured?'✅ captured':'❌ missed'}"></div>`;
+    }).join('');
+    html += `<div class="entity-item">
+      <div class="entity-name" title="${loc}">${loc}</div>
+      <div class="entity-dots">${dots}</div>
+    </div>`;
+  }
+  document.getElementById('entity-heatmap').innerHTML = html;
+}
+
+// ── Failure analysis ──────────────────────────────────────────────────────────
+function renderFailureAnalysis(data) {
+  const models = [...new Set(data.map(d=>d.model))];
+
+  // Top failing localities
+  const localities = [...new Set(data.map(d=>d.locality).filter(Boolean))];
+  const locFails = localities.map(loc => {
+    const rows = data.filter(d=>d.locality===loc && !d.error);
+    const failRate = rows.filter(r=>!r.entity_captured).length / rows.length;
+    return {name: loc, rate: failRate};
+  }).sort((a,b)=>b.rate-a.rate).slice(0,6);
+
+  // Worst models by WER
+  const modelWER = models.map(m => {
+    const rows = data.filter(d=>d.model===m && d.wer!=null && !d.error);
+    return {name: MODEL_LABELS[m]||m, wer: avg(rows.map(r=>r.wer)), color: MODEL_COLORS[m]};
+  }).sort((a,b)=>b.wer-a.wer);
+
+  // Noisy condition failures
+  const condFails = ['quiet','noisy','phone','whisper'].map(cond => {
+    const rows = data.filter(d=>d.condition===cond && !d.error && d.wer!=null);
+    return {name: cond, wer: avg(rows.map(r=>r.wer||0))};
+  }).sort((a,b)=>b.wer-a.wer);
+
+  document.getElementById('failure-grid').innerHTML = `
+    <div class="failure-card">
+      <h4>🗺 Hardest Locality Names</h4>
+      ${locFails.map(l=>`<div class="failure-item">
+        <span class="failure-name">${l.name}</span>
+        <span class="failure-rate">${(l.rate*100).toFixed(0)}% miss rate</span>
+      </div>`).join('')}
+    </div>
+    <div class="failure-card">
+      <h4>🤖 Model WER Ranking</h4>
+      ${modelWER.map(m=>`<div class="failure-item">
+        <span class="failure-name" style="color:${m.color}">${m.name}</span>
+        <span class="failure-rate" style="color:${m.color}">${(m.wer*100).toFixed(1)}% WER</span>
+      </div>`).join('')}
+    </div>
+    <div class="failure-card">
+      <h4>🔊 WER by Noise Condition</h4>
+      ${condFails.map(c=>`<div class="failure-item">
+        <span class="failure-name">${{quiet:'🔇 Quiet',noisy:'🔊 Noisy',phone:'📱 Phone',whisper:'🤫 Whisper'}[c.name]||c.name}</span>
+        <span class="failure-rate">${(c.wer*100).toFixed(1)}% avg WER</span>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+// ── Table controls ────────────────────────────────────────────────────────────
+function renderTableControls(data) {
+  const models = ['all', ...new Set(data.map(d=>d.model))];
+  const html = models.map(m => `
+    <button class="filter-btn ${m==='all'?'active':''}" onclick="filterTable('${m}', this)">
+      ${m==='all' ? 'All Models' : (MODEL_LABELS[m]||m)}
+    </button>
+  `).join('');
+  document.getElementById('table-controls').innerHTML = html;
+}
+
+function filterTable(model, btn) {
+  activeFilter = model;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable(allData, model);
+}
+
+// ── Results table ─────────────────────────────────────────────────────────────
+function renderTable(data, modelFilter) {
+  const filtered = modelFilter==='all' ? data : data.filter(d=>d.model===modelFilter);
+  const classMap = {deepgram:'deepgram',whisper:'whisper',indic_whisper:'indic',google_stt:'google'};
+
+  const rows = filtered.map(r => {
+    const werClass = !r.wer ? '' : r.wer < 0.15 ? 'wer-good' : r.wer < 0.35 ? 'wer-mid' : 'wer-bad';
+    const hyp = (r.hypothesis||'').toLowerCase();
+    const loc = (r.locality||'').toLowerCase();
+    const highlightedHyp = loc && hyp.includes(loc)
+      ? hyp.replace(loc, `<span class="hit">${loc}</span>`)
+      : `<span class="miss">${hyp||'—'}</span>`;
+
+    return `<tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${r.file||'—'}</td>
+      <td><span class="model-tag ${classMap[r.model]||''}">${MODEL_LABELS[r.model]||r.model}</span></td>
+      <td><span class="cond-tag">${r.condition||'?'}</span></td>
+      <td class="wer-cell ${werClass}">${r.wer!=null?(r.wer*100).toFixed(1)+'%':'ERR'}</td>
+      <td class="wer-cell" style="color:var(--muted)">${r.cer!=null?(r.cer*100).toFixed(1)+'%':'—'}</td>
+      <td class="entity-badge">${r.error?'⚠️':r.entity_captured?'✅':'❌'}</td>
+      <td style="font-family:monospace;font-size:11px">${r.latency_ms?r.latency_ms+'ms':'—'}</td>
+      <td class="transcript-cell">${highlightedHyp}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('results-tbody').innerHTML = rows ||
+    '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px">No results</td></tr>';
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function avg(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a,b)=>a+(b||0), 0) / arr.length;
+}
+
+function animateBars(containerId) {
+  const scope = containerId ? document.getElementById(containerId) : document;
+  if (!scope) return;
+  setTimeout(() => {
+    scope.querySelectorAll('.bar-fill[data-target]').forEach(bar => {
+      const t = parseFloat(bar.dataset.target);
+      bar.style.width = t + '%';
+    });
+  }, 80);
+}
+</script>
+</body>
+</html>
